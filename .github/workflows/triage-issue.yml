@@ -1,0 +1,39 @@
+name: Triage Issue
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout .github org repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/.github
+          path: .github-repo
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run Triage Agent
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ''
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_MODEL: 'glm-4-flash'
+          LLM_ENDPOINT: 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
+          CONFIDENCE_THRESHOLD: '0.7'
+          DRY_RUN: 'false'
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: python3 .github-repo/actions/triage/triage_agent.py
